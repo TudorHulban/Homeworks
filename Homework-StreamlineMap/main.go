@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type state struct {
 	process      []string
 	dependencies map[string][]string
@@ -15,9 +13,6 @@ func newState() *state {
 }
 
 func (s *state) extractDependency(name string) {
-	fmt.Println("extract:", name)
-	fmt.Println(s.dependencies)
-
 	if dependencies, exists := s.dependencies[name]; exists {
 		for _, stage := range dependencies {
 			s.process = append(s.process, stage)
