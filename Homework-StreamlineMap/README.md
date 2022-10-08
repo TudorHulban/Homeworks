@@ -13,18 +13,7 @@ var buildStages = map[string][]string{
 	"deploy":   {"publish"},                 // Pick the package from where it was published and deploy it
 }
 ```
-The repo contains the logic to print the stage names in an order which is consistent with the dependencies between the stages. Example:  
-Map results:
-```yaml
-build-dependencies{checkout}
-test-dependencies{checkout}
-package-dependencies{build}
-publish-dependencies{test,lint,package}
-deploy-dependencies{publish}
-checkout-dependencies{}
-lint-dependencies{checkout}
-```
-Output:
-```yaml
-streamlined: [checkout build test package lint publish deploy]
-```
+The repo contains the logic to print the stage names in an order which is consistent with the dependencies between the stages.  
+Time complexity: O(n)  
+Space complexity: O(n)  
+with n being the map length.

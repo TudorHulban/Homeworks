@@ -1,123 +1,56 @@
 package main
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
-type stage struct {
-	name         string
-	dependencies []string
+type state struct {
+	process      []string
+	dependencies map[string][]string
 }
 
-type process []*stage
-
-var full = map[string][]string{
-	"checkout": {},                          // Clone the repository
-	"lint":     {"checkout"},                // Run a linter
-	"build":    {"checkout"},                // Build binaries
-	"test":     {"checkout"},                // Run tests
-	"package":  {"build"},                   // Package the binaries into a package
-	"publish":  {"test", "lint", "package"}, // Publish the packages to a server for storing build artifacts
-	"deploy":   {"publish"},                 // Pick the package from where it was published and deploy it
-}
-
-func (p process) String() string {
-	var res []string
-
-	for _, stage := range p {
-		res = append(res, stage.name+"-dependencies{"+strings.Join(stage.dependencies, ",")+"}")
+func newState() *state {
+	return &state{
+		process:      make([]string, 0),
+		dependencies: make(map[string][]string),
 	}
-
-	return strings.Join(res, "\n")
 }
 
-func main() {
-	p := identifySteps(full)
+func (s *state) extractDependency(name string) {
+	fmt.Println("extract:", name)
+	fmt.Println(s.dependencies)
 
-	fmt.Println(p)
+	if dependencies, exists := s.dependencies[name]; exists {
+		for _, stage := range dependencies {
+			s.process = append(s.process, stage)
 
-	fmt.Println("streamlined:", parse(p))
-}
+			s.extractDependency(stage)
+		}
 
-func identifySteps(stages map[string][]string) process {
-	var res process
-
-	for name, dependencies := range stages {
-		res = append(res, &stage{
-			name:         name,
-			dependencies: dependencies,
-		})
+		return
 	}
-
-	return res
 }
 
-func parse(p process) []string {
-	if len(p) == 0 {
-		return nil
-	}
+func (s *state) load(stages map[string][]string) {
+	for stage, dependencies := range stages {
+		if len(dependencies) == 0 {
+			s.process = append(s.process, stage)
 
-	var res []string
-
-	var i int
-	for i <= len(p)-1 {
-		if len(p[i].dependencies) == 0 {
-			res = append(res, p[i].name)
-
-			p = append(p[:i], p[i+1:]...)
-
-			if len(p) == 0 {
-				break
-			}
-
-			i = 0
+			s.extractDependency(stage)
 
 			continue
 		}
 
-		if contains(res, p[i].dependencies) {
-			res = append(res, p[i].name)
+		if contains(s.process, dependencies) {
+			s.process = append(s.process, stage)
 
-			p = append(p[:i], p[i+1:]...)
-
-			if len(p) == 0 {
-				break
-			}
-
-			i = 0
+			s.extractDependency(stage)
 
 			continue
 		}
 
-		i++
-	}
-
-	return res
-}
-
-func parseStages(stages map[string][]string) []string {
-	steps := identifySteps(stages)
-
-	return parse(steps)
-}
-
-func contains(source, what []string) bool {
-	for _, elementWhat := range what {
-		var elementIsContained bool
-
-		for _, elementSource := range source {
-			if elementSource == elementWhat {
-				elementIsContained = true
-
-				break
-			}
-		}
-
-		if !elementIsContained {
-			return false
+		for _, dependency := range dependencies {
+			s.dependencies[dependency] = append(s.dependencies[dependency], stage)
 		}
 	}
-
-	return true
 }
+
+func main() {}
